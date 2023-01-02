@@ -13,11 +13,20 @@
  </table>
 
 ## 📖 Task description
-> Placeholder
+> Task and problem
 
-Work was inspired by the various `rayshader` (`raytracing` + `terrain shading/hillshading`, which cover both 'smart' light rendering and 'smart' relief shades above known topography) projects in particular and trends in 3D geodataviz in general. Usually people in DataViz community have been using either over-specialized tools (f.e. `blender`, `aeroid`, `3DMax`, `plugins for *GIS` family of professional software) or R programming language ecosystem (f.e. `rayshader`, `rayvista`). This project is trying to accelerate python-based pipeline.
+Work was inspired by various `rayshader` projects in particular, and trends in 3D geodataviz in general, where `rayshader` stays for `raytracing` + `terrain shading/hillshading` (which cover both 'smart' light rendering and 'smart' terrain-relief shading above known topography). Usually people in DataViz community have been using either over-specialized tools (f.e. `blender`, `aeroid`, `3DMax`, plugins for  family of professional  `*GIS software`) or R programming language ecosystem (f.e. `rayshader`, `rayvista`, R-lang APIs) for these purposes. This project is trying to accelerate more-python-based pipeline.
 
-Target goal of a project was to combine `3D rendered plots` (meshes above Digital Surface Models) with `OSM datasets` (polygons and their feature-attributes) acquired over the [Downtowns, Parks, Parkings](#link) project to color selected assets across dozens of urban areas in a fancy and automated way. However, I've meet some restrictions still working under trying to match and scale datasets. The major restriction was caused by a limited availability of a high quality (~1m/<3ft) actual point cloud open datasets.
+Target goal of a project was to catalyze `OSM datasets` (_polygons and their feature-attributes_) acquired over the [Downtowns, Parks, Parkings](#link) project with `3D rendered plots` (_meshes above Digital Surface Models_) to color selected assets across dozens of urban areas in a fancy way in automated manner. However, I've met some restrictions still working under trying to match datasets (LiDARs with OSM, different LiDARs) and scale the pipeline (many different datasets sources, computational complex scripts). The major restriction was caused by a limited availability of high quality (~1m/<3ft) and time-actual (>2019) point cloud open datasets. The minor restrictions were caused by complexity of high-level packages themself.
+
+> Secondary sources
+
+* ["Penn MUSA Masterclass: 3D Mapping and Visualization with R and Rayshader" by Tyler Morgan-Wall (@tylermorganwall)](https://github.com/tylermorganwall/MusaMasterclass)
+* ["Python Libraries for Mesh, Point Cloud, and Data Visualization (Part 1)" by Ivan Nikolov](https://towardsdatascience.com/python-libraries-for-mesh-and-point-cloud-visualization-part-1-daa2af36de30)
+* ["Atlas of oblique maps: A collection of landform portrayals of selected areas of the world" by USGS, 1988](https://pubs.er.usgs.gov/publication/i1799)
+* USGS viewers [f.e. [USGS / Entwine](https://usgs.entwine.io/) - (Potree) (Cesium)]
+* Maxar \[[Precision3D Data Suite](https://www.maxar.com/products/precision3d-data-suite) | [The Globe in 3D](https://resources.maxar.com/precision3d-data-suite/the-globe-in-3d)\] and Airbus \[[Airbus Constellation](https://www.intelligence-airbusds.com/imagery/constellation/pleiades/)\]
+  * [Satellite surveillance may be less of a privacy concern than you think - for now](https://www.cnet.com/science/turns-out-satellite-surveillance-only-sounds-like-a-major-privacy-concern/)
 
 <details>
   <summary><i>Pipeline scheme</i> - click to view draft</summary>
@@ -29,7 +38,17 @@ Target goal of a project was to combine `3D rendered plots` (meshes above Digita
    </tr>
    <tr>
       <td>
-      <img src="./figures/external/pipeline_flow.jpg?raw=true" align="center" alt="pipeline flow (draft)" width="100%">
+      <img src="./figures/external/pipeline_flow.png?raw=true" align="center" alt="pipeline flow (draft)" width="100%">
+      </td>
+   </tr>
+   <tr>
+      <td>
+      Preprocessing logic
+      </td>
+   </tr>
+   <tr>
+      <td>
+      <img src="./figures/external/preprocessing_logic.png?raw=true" align="right" alt="preprocessing_logic" width="80%">
       </td>
    </tr>
 </table>
@@ -38,7 +57,7 @@ Target goal of a project was to combine `3D rendered plots` (meshes above Digita
 Current raw report available, see [[html]](https://htmlpreview.github.io/) | [[ipynb]](https://nbviewer.org/)
 
 ## 📊 Selected charts
-Selected charts are provided in high quality. See below.
+Selected charts are provided in high quality (>4K). See below.
 <details>
   <summary><i>Charts</i> - click to expand</summary>
   <table>
@@ -81,7 +100,7 @@ Selected charts are provided in high quality. See below.
           <img src="./figures/internal/bishkek_kg_orthographic.png?raw=true" align="center" alt="Bishkek, Kyrgyzstan - top, 2D orthographic projection" width="1280" loading="lazy">
         </td>
     </tr>
-      <td colspan=2>↑ <b>Bishkek city, Kyrgyzstan.</b> <br><i>Data comes Pleiades tristereo optical imagery, 2013 (retrived via OpenTopography). 0.5m satellite remote sensing photogrammetry point cloud. [link](https://portal.opentopography.org/dataspace/dataset?opentopoID=OTDS.092021.32643.1)</td>
+      <td colspan=2>↑ <b>Bishkek city, Kyrgyzstan.</b> <br><i>Data comes from Pleiades satellites tristereo optical imagery, 2013 (retrived via OpenTopography). 0.5m satellite remote sensing photogrammetry point cloud. [link](https://portal.opentopography.org/dataspace/dataset?opentopoID=OTDS.092021.32643.1)</td>
    </table>
 </details>
 
@@ -113,6 +132,23 @@ Project structure:
 +--README.md                  <- the top-level README for developers using this project
 ```
 [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/#directory-structure)
+
+## 🧰  Installation
+1. Check the `requirements.txt`
+2. Check `wget` and `unzip` (or OS analogues)
+3. Check backend for `whitebox tools` (whitebox geo)
+```
+a. https://www.whiteboxgeo.com/manual/wbt_book/install.html
+b. https://giswqs.github.io/whitebox-frontends/#python
+```
+4. Check backend for `pyvista` (VTK)
+```
+a. https://docs.pyvista.org/getting-started/installation.html
+```
+5. If needed, check backend for `rasterio` (GDAL)
+```
+https://rasterio.readthedocs.io/en/latest/installation.html
+```
 
 ## 📌 Links
 > Placeholder
