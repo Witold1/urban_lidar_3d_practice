@@ -1,0 +1,26 @@
+### * Should be default, parts of Python Standard Library
+glob
+gc
+# logging
+
+### * Basic packages for math and visualization, cover many other dependencies
+numpy==1.21.6
+matplotlib==3.5.3
+
+### * To work with LiDAR files (f.e. convert, mosaic, rasterize, filter)
+### - check additional backend requirements, follow README -> Installation
+whitebox=2.2.0
+laspy[lazrs,laszip]
+rasterio==1.2.10
+meshio==5.3.4
+
+# xarray==0.20.2
+# rioxarray==0.9.1
+# earthpy==0.9.4
+# shapely==1.8.0
+
+### * To plot 3D images (f.e. render, add shadows, add lights)
+pyvista==0.37.0
+# imageio-ffmpeg
+### * To save 3D images in high quality
+PIL==9.1.1
