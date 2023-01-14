@@ -61,7 +61,7 @@ Target goal of a project was to catalyze `OSM datasets` (_polygons and their fea
 </table>
 </details>
 
-Current raw report available, see [[html]](https://htmlpreview.github.io/) | [[ipynb]](https://nbviewer.org/)
+Current raw report available, see [[html]](https://htmlpreview.github.io/?https://github.com/Witold1/urban_lidar_3d_practice/blob/master/reports/Pipeline_and_results_final.html) | [[ipynb]](https://nbviewer.org/github/Witold1/urban_lidar_3d_practice/blob/master/notebooks/Pipeline_and_results_final.ipynb)
 
 ## 📊 Selected charts
 Selected charts are provided in high quality (>4K). See below.
