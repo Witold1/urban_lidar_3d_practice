@@ -6,6 +6,12 @@ import glob
 import gc
 import os
 
+try:
+    import whitebox
+except ModuleNotFoundError::
+    !pip install whitebox
+    import whitebox
+
 DATA_LINKS = {'MIAMI FL USA' : ['http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118754_e.zip',
                                 'http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118755_e.zip',
                                 'http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118454_e.zip',
@@ -140,15 +146,8 @@ def rasterize_lidar_files(input_folder=None, filter_outliers=True, run=True):
     if not run:
         return print('\tRasterize LiDAR files manually (& filter outliers if needed)')
 
-    try:
-        import whitebox
-    except ModuleNotFoundError::
-        !pip install whitebox
-        import whitebox
-
     wbt = whitebox.WhiteboxTools()
     print(wbt.version())
-    # print(wbt.help())
 
     wbt.verbose = False # True to see progress
 
@@ -204,15 +203,8 @@ def mosaic_rastersized_lidar_files(input_folder=None, output_mosaic_path=None, m
     if not run:
         return print('\tMosaic rastersized LiDAR files manually')
 
-    try:
-        import whitebox
-    except ModuleNotFoundError::
-        !pip install whitebox
-        import whitebox
-
     wbt = whitebox.WhiteboxTools()
     print(wbt.version())
-    # print(wbt.help())
 
     ### WHITEBOX MOSAIC merge
     if mosaic_backend == 'whitebox':
@@ -292,15 +284,8 @@ def filter_mosaiced_raster_file(input_file=None, output_mosaic_path=None, method
     if not run:
         return print('\tFilter moasaic file(s) manually (if needed)')
 
-    try:
-        import whitebox
-    except ModuleNotFoundError::
-        !pip install whitebox
-        import whitebox
-
     wbt = whitebox.WhiteboxTools()
     print(wbt.version())
-    # print(wbt.help())
 
     ### identify the sample data directory of the package
     # data_dir = os.path.dirname(pkg_resources.resource_filename("whitebox", 'testdata/'))
@@ -331,6 +316,7 @@ def _read_processed_rasterized_file(file_path=None, CUSTOM_READ=False):
             Maybe the reason is test's CRS - Florida's own CRS (Florida East State Plane)
             which we need to reproject
         https://github.com/pyvista/pyvista-support/issues/394
+        https://towardsdatascience.com/how-to-automate-lidar-point-cloud-processing-with-python-a027454a536c
 
 
     Parameters

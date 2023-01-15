@@ -9,11 +9,9 @@ import os
 # https://towardsdatascience.com/python-libraries-for-mesh-and-point-cloud-visualization-part-1-daa2af36de30
 try:
     import pyvista as pv
-    from pyvista import examples as pyvista_examples
 except ModuleNotFoundError::
     !pip install pyvista
     import pyvista as pv
-    from pyvista import examples as pyvista_examples
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -71,6 +69,7 @@ def _custom_save_rendered_plot(image_np_array=None, save_np_array=True, plot_fil
     except ModuleNotFoundError::
         !pip install PIL
         from PIL import Image
+        
     print(f'\t\t{datetime.datetime.now()} Saving high quality plot array')
     # https://numpy.org/doc/stable/reference/generated/numpy.save.html#numpy.save
     np.save(plot_filename + '.array', image_np_array)
