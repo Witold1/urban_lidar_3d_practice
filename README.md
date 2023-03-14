@@ -4,10 +4,10 @@
 <table>
   <tr>
     <td>
-      <img src="./figures/internal/orbiting/MIAMI FL USA_orbiting_800_36points_Shades.gif" align="center" alt="Preface - Miami Beach, FL orbiting" height="400" width=400">
+      <img src="./figures/internal/orbiting/MIAMI FL USA_orbiting_800_36points_Shades.gif" align="center" alt="Preface - Miami Beach, FL orbiting" height="300" width="300">
     </td>
     <td>
-      <img src="./figures/internal/low_resolution/MIAMI FL USA_tst1_biliniar_ortho_1600x1600.png" align="center" alt="Preface - Miami Beach, FL ortho" height=400"  width=400">
+      <img src="./figures/internal/low_resolution/MIAMI FL USA_tst1_biliniar_ortho_1600x1600.png" align="center" alt="Preface - Miami Beach, FL ortho" height="300"  width="300">
     </td>
   </tr>
 </table>
