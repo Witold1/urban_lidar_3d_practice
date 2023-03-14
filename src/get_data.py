@@ -8,17 +8,9 @@ import os
 
 try:
     import whitebox
-except ModuleNotFoundError::
+except ModuleNotFoundError:
     !pip install whitebox
     import whitebox
-
-DATA_LINKS = {'MIAMI FL USA' : ['http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118754_e.zip',
-                                'http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118755_e.zip',
-                                'http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118454_e.zip',
-                                'http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118455_e.zip'
-                               ],
-            'DALLAS TX USA' : ['https://data.tnris.org/90ac2f86-6bb7-49d3-89db-f4557376ebb6/resources/usgs19-70cm-pecos-dallas_3296104_lpc.zip'],
-            'BISHKEK CITY KG' : ['TILES LINK'], }
 
 def _create_folders_structure():
     """Creates project structure (adds folders for data stages)
@@ -85,6 +77,7 @@ def decompress_laz_files(input_folder=None, run=False):
     ----------
     input_folder : str
         description
+        example format : "/kaggle/working/laz_files/"
     run : bool
         if run function code
     """
@@ -94,7 +87,7 @@ def decompress_laz_files(input_folder=None, run=False):
     # laspy is used in order to convert .laz to .las (unzip laz)
     try:
         import laspy
-    except ModuleNotFoundError::
+    except ModuleNotFoundError:
         !pip install laspy[lazrs,laszip]
         import laspy
 
@@ -110,25 +103,77 @@ def decompress_laz_files(input_folder=None, run=False):
         print(f'\t\t{datetime.datetime.now()} Saving .LAS')
         las.write(file.replace('laz', 'las'))
 
+        print(f"\t\tdelete: {file}")
         !rm "$file"
         #if indx == 5: break
 
-    # !rm /kaggle/working/laz_files/*.laz
+    !rm /kaggle/working/laz_files/*.laz
     del las
     gc.collect()
 
-def rasterize_lidar_files(input_folder=None, filter_outliers=True, run=True):
-    """Creates a mesh (rasterizes) LiDAR point cloud.
+def filter_lidar_files(input_folder=None,
+                       filter_classes=True, exclude_cls=None,
+                       filter_outliers=True, filter_outliers_params=None,
+                       run=True):
+    """Filters LiDAR point cloud.
 
         Takes raw data files in LAS format (point clouds)
+
+    Parameters
+    ----------
+    input_folder : str
+        description
+        example format : "/kaggle/working/laz_files/"
+    filter_outliers : bool
+        if filter (remove) outliers from a point cloud, uses `wbt.lidar_remove_outliers`
+    run : bool
+        if run function code
+    """
+    if not run:
+        return print('\tFilter LiDAR files manually')
+
+    wbt = whitebox.WhiteboxTools()
+    print(wbt.version())
+
+    wbt.verbose = False # True to see progress
+    print(f"\t{datetime.datetime.now()} run filtering. {len(glob.glob('/kaggle/working/las_files/*'))} files")
+    if filter_outliers:
+        for indx, file in enumerate(glob.glob(f'{input_folder}*.las')):
+            print(f"\t{datetime.datetime.now()} {indx} \t{file} - remove outliers")
+            active_file = file
+            active_file = active_file.replace('.las', '_rmv_out.las')
+            wbt.lidar_remove_outliers(i=file, output=active_file, **filter_outliers_params)
+            print(f"\t\tcreate: {active_file}")
+            print(f"\t\tdelete: {file}")
+            !rm "$file"
+    gc.collect()
+
+    if filter_classes:
+        for indx, file in enumerate(glob.glob(f'{input_folder}*.las')):
+            print(f"\t{datetime.datetime.now()} {indx} \t{file} - filter classes")
+
+            active_file = file
+            active_file = active_file.replace('.las', '_rmv_cls.las')
+            wbt.filter_lidar_classes(i=file, output=active_file, exclude_cls=exclude_cls)
+            print(f"\t\tcreate: {active_file}")
+            print(f"\t\tdelete: {file}")
+            !rm "$file"
+        gc.collect()
+
+def rasterize_lidar_files(input_folder=None, raster_method='surface',
+                          gridding_params=None, run=True):
+    """Creates a mesh (rasterizes) LiDAR point cloud.
+
+        Takes LPC data files in LAS format (point clouds)
         Creates mesh (rasters) in tif/tiff format (Tagged Image File Format)
 
         We use `whitebox geo` API to handle it.
-            Method selected is `Delaunay triangulation` (Delaunay triangular irregular network (TIN))
+            Methods selected are
+                `Delaunay triangulation` (Delaunay triangular irregular network (TIN))
+                `lidar_digital_surface_model` (Delaunay triangular with additional params)
 
         For additional information, check
             # https://www.whiteboxgeo.com/manual/wbt_book/available_tools/lidar_tools.html#lidartingridding
-            # https://www.whiteboxgeo.com/manual/wbt_book/available_tools/lidar_tools.html#lidarremoveoutliers
             # https://docs.qgis.org/3.4/en/docs/user_manual/working_with_mesh/mesh_properties.html
 
         Logic:
@@ -138,46 +183,33 @@ def rasterize_lidar_files(input_folder=None, filter_outliers=True, run=True):
     ----------
     input_folder : str
         description
-    filter_outliers : bool
-        if filter (remove) outliers from a point cloud, uses `wbt.lidar_remove_outliers`
+        example format : "/kaggle/working/laz_files/"
+    raster_method : str
+        `delaunay` - uses `wbt.lidar_tin_gridding`
+        `surface` uses `wbt.lidar_digital_surface_model`
     run : bool
         if run function code
     """
     if not run:
-        return print('\tRasterize LiDAR files manually (& filter outliers if needed)')
+        return print('\tRasterize LiDAR files manually')
 
     wbt = whitebox.WhiteboxTools()
-    print(wbt.version())
+    wbt.set_working_dir(input_folder)
 
-    wbt.verbose = False # True to see progress
+    # batch processing (whole folder) vs kinda stream (rasterizes every file)
+    ## `batch` should note files around each other
+    ## https://www.whiteboxgeo.com/manual/wbt_book/tutorials/lidar.html#i-have-many-laszlidar-files-and-want-to-interpolate-all-of-them-at-once
+    ##
+    ## `kinda stream` I suppose assumes each file is kinda thing-in-itself
+    if raster_method == "delaunay":
+        wbt.lidar_tin_gridding(**gridding_params) #2,3,4,5
+    else:
+        wbt.lidar_digital_surface_model(resolution=1., radius=0.8)
+    !mv "$input_folder"*.tif /kaggle/working/tif_files/
+    ""
 
-    print(f"\t{datetime.datetime.now()} run rasterization. {len(glob.glob('/kaggle/working/las_files/*'))} files")
-    for indx, file in enumerate(glob.glob(f'{input_folder}*.las')):
-        ### === outliers
-        if filter_outliers:
-            print(f"\t{datetime.datetime.now()} {indx} \t{file} - remove outliers")
-            wbt.lidar_remove_outliers(i = file,
-                                       output = file.replace('.las', '_rmv_out.las'),
-                                       radius = 4,
-                                       elev_diff = 150)
-
-        ### === to mesh
-        print(f"\t{datetime.datetime.now()} {indx} \t{file} - run triangulation")
-        wbt.lidar_tin_gridding(i = file, # .replace('.las', '_rmv_out.las')
-                                output = file.replace('las', 'tif'), # .replace('.tif', '_rmv_out.tif')
-                                resolution = 1.0,
-                                #minz=-10,
-                                #maxz=900,
-                                exclude_cls = '3,4,5,7,13,14,15,16,18')
-        !rm "$file"
-        #if indx == 5: break
-
-    # !rm /kaggle/working/las_files/*[0-9].las # drop ordinal .las
-    ## !rm /kaggle/working/las_files/*_rmv_out.las # drop .las with filtered outliers
-    wbt.verbose = False
-    gc.collect()
-
-def mosaic_rastersized_lidar_files(input_folder=None, output_mosaic_path=None, mosaic_backend='whitebox', run=True):
+def mosaic_rastersized_lidar_files(input_folder=None, output_mosaic_path=None,
+                                   mosaic_backend='whitebox', mosaic_method="bilinear", run=True):
     """Merges (mosaics, appends) many selected raster files into one big raster mosaic
 
         Takes raster files from `input_folder`
@@ -212,8 +244,8 @@ def mosaic_rastersized_lidar_files(input_folder=None, output_mosaic_path=None, m
         ### https://www.whiteboxgeo.com/manual/wbt_book/tutorials/mosaic.html
         wbt.verbose = False
         wbt.set_working_dir(input_folder) # ('/kaggle/working/tif_files/')
-        if wbt.mosaic(output = output_mosaic_path, # '/kaggle/working/mosaic_whitebox.tif'
-                      method = "bilinear") != 0:
+        if wbt.mosaic(output=output_mosaic_path, # '/kaggle/working/mosaic_whitebox.tif'
+                      method=mosaic_method) != 0:
             # Non-zero returns indicate an error.
             print('\t ERROR running mosaic')
         wbt.verbose = False
@@ -260,7 +292,8 @@ def mosaic_rastersized_lidar_files(input_folder=None, output_mosaic_path=None, m
         # del(mesh1, mesh2, mesh3, mesh4)
         # flip `x` and `y` axis if needed
 
-def filter_mosaiced_raster_file(input_file=None, output_mosaic_path=None, method='median', run=True):
+def filter_mosaiced_raster_file(input_file=None, output_mosaic_path=None,
+                                method='median', filter_params=None, run=True):
     """Filters rasters
         Selected method is `wbt.median_filter`. Feel free to experiment.
 
@@ -268,6 +301,7 @@ def filter_mosaiced_raster_file(input_file=None, output_mosaic_path=None, method
         Creates filtered mosaic to `output_mosaic_path`
 
         For additional information, check
+            # https://www.whiteboxgeo.com/manual/wbt_book/available_tools/image_processing_tools_filters.html
             # https://www.whiteboxgeo.com/manual/wbt_book/available_tools/image_processing_tools_filters.html?highlight=Median#medianfilter
 
     Parameters
@@ -285,26 +319,26 @@ def filter_mosaiced_raster_file(input_file=None, output_mosaic_path=None, method
         return print('\tFilter moasaic file(s) manually (if needed)')
 
     wbt = whitebox.WhiteboxTools()
+    wbt.verbose = False
     print(wbt.version())
 
     ### identify the sample data directory of the package
     # data_dir = os.path.dirname(pkg_resources.resource_filename("whitebox", 'testdata/'))
     #
-    # wbt.set_working_dir(data_dir)
+    # wbt.set_working_dir(data_dir) # wbt.set_working_dir("/kaggle/working/laz_files/")
     # wbt.verbose = False
     # # wbt.feature_preserving_smoothing("DEM.tif", "smoothed.tif", filter=9)
     # # wbt.breach_depressions("smoothed.tif", "breached.tif")
     # # wbt.d_inf_flow_accumulation("breached.tif", "flow_accum.tif")
 
     if method == 'median':
-        wbt.verbose = False
-        wbt.median_filter(i = input_file,
-                          output = output_mosaic_path,
-                          filterx = 9, filtery = 9, sig_digits = 2)
-        wbt.verbose = False
-        # filterx/filtery -> less = compute time -> more
+        wbt.median_filter(i=input_file, output=output_mosaic_path, **filter_params) # 9,9,2 or 7,7,3 ?
+    elif method == 'conservative_smoothing':
+        wbt.conservative_smoothing_filter(i=input_file, output=output_mosaic_path, **filter_params)
+    elif method == 'bilateral':
+        wbt.bilateral_filter(i=input_file, output=output_mosaic_path, **filter_params)
     else:
-        print('Method not implemented.')
+        return print('Method not avaliable.')
 
 def _read_processed_rasterized_file(file_path=None, CUSTOM_READ=False):
     """Reads the raster file into a data structure needed for futher plots
@@ -356,7 +390,7 @@ def _read_processed_rasterized_file(file_path=None, CUSTOM_READ=False):
 
     ### DEFAULT PYVISTA APPROACH TO READ A RASTER
     else:
-        mesh = pv.read(path)
+        mesh = pv.read(file_path)
         # Example - READ and CLIP
         # mesh = pv.read("/kaggle/working/mosaic_output_whitebox_bilinear.tif")
         # try:
@@ -383,21 +417,49 @@ def _main_get_data():
         gc.collect()
 
         print('Decompress LAZ')
-        if key != 'MIAMI FL USA':
-            decompress_laz_files(input_folder='/kaggle/working/laz_files/', run=False)
-            gc.collect()
+        decompress_laz_files(input_folder="/kaggle/working/laz_files/", run=False)
+        gc.collect()
 
-        print('Rasterize (& filter outliers in point clouds)')
-        rasterize_lidar_files(input_folder='/kaggle/working/las_files/', filter_outliers=True, run=False)
+        print('Show LiDAR file information summary')
+        wbt = whitebox.WhiteboxTools()
+        # for lidar_file_fp in glob.glob("/kaggle/working/las_files/*"):
+        #     print(lidar_file_fp)
+        wbt.lidar_info(i=glob.glob("/kaggle/working/las_files/*")[1],
+                       output="/kaggle/working/info.html",
+                       density=True, vlr=True, geokeys=True)
+
+        del wbt
+
+        print('Filter outliers in point clouds)')
+        filter_outliers_params = {"radius" : 4, "elev_diff" : 15, "use_median" : True, "classify" : False}
+        filter_lidar_files(input_folder="/kaggle/working/las_files/",
+                   filter_classes=False, exclude_cls="0,7,18", # 3,4,5 Low/Medium/High Vegetation # try 1 - ""3,5,7,14", try 2 - add 1, 18
+                   filter_outliers=True, filter_outliers_params=filter_outliers_params,
+                   run=True)
+        gc.collect()
+
+        print('Rasterize point clouds)')
+        gridding_params = {"resolution" : 1, "exclude_cls" : "18,19"} # exclude_cls='3,4,5,7,8,9,13,14,15,16,18,19'
+        gridding_params = {"resolution" : 1, "radius" : 0.8} #, minz=0, maxz=80
+        rasterize_lidar_files(input_folder="/kaggle/working/las_files/", raster_method="surface",
+                              gridding_params=gridding_params, run=True) # method="surface" or "delaunay"
         gc.collect()
 
         print('Mosaic')
         mosaic_backend = 'whitebox'
         output_mosaic_path = f'/kaggle/working/{key}_mosaic_{mosaic_backend}_bilinear.tif'
-        mosaic_rastersized_lidar_files(input_folder='/kaggle/working/tif_files/', output_mosaic_path=output_mosaic_path, mosaic_backend=mosaic_backend, run=False)
+        # Uses the nearest-neighbour resampling method (i.e. nn). Cubic convolution (i.e. cc) and bilinear interpolation (i.e. bilinear) are other options.
+        mosaic_rastersized_lidar_files(input_folder="/kaggle/working/tif_files/",
+                               output_mosaic_path=output_mosaic_path,
+                               mosaic_backend=mosaic_backend,
+                               mosaic_method="nn",
+                               run=True)
         gc.collect()
 
         print('Filter raster')
         output_filtered_mosaic_path = f'/kaggle/working/{key}_{mosaic_backend}_bilinear_filtered.tif'
-        filter_mosaiced_raster_file(input_file=output_mosaic_path, output_mosaic_path=output_filtered_mosaic_path, method='median', run=False)
+        filter_params = {"filterx" : 9, "filtery" : 9, "sig_digits" : 2}
+        filter_mosaiced_raster_file(input_file="/kaggle/working/riga_center.tif",
+                            output_mosaic_path=output_filtered_mosaic_path,
+                            method="median", filter_params=filter_params, run=True)
         gc.collect()

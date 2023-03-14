@@ -1,0 +1,10 @@
+internal/high_resolution
+
+internal/low_resolution/*_3200*
+
+internal/orbiting/*_3200*
+internal/orbiting/*_1K*
+internal/orbiting/*_1600*
+
+internal/hillshading/*
+!internal/hillshading/*_rasterio*

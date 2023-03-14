@@ -9,7 +9,7 @@ import os
 # https://towardsdatascience.com/python-libraries-for-mesh-and-point-cloud-visualization-part-1-daa2af36de30
 try:
     import pyvista as pv
-except ModuleNotFoundError::
+except ModuleNotFoundError:
     !pip install pyvista
     import pyvista as pv
 
@@ -19,9 +19,25 @@ from PIL import Image
 
 display(pv.Report())
 pv.start_xvfb()
-pv.rcParams['transparent_background'] = True
+pv.rcParams["transparent_background"] = True
 
-def plot_raster_rasterio(raster_path=None, ax=None):
+def visually_validate_mosaic(None):
+    """
+
+    """
+    mosaic_files = glob.glob('/kaggle/working/*.tif')
+
+    fig, axes = plt.subplots(1, len(mosaic_files), figsize=(8, 10), dpi=150)
+
+    titles = [mosaic_file.split('/')[-1][:-4] for mosaic_file in mosaic_files]
+    for indx, file in enumerate(mosaic_files):
+        axes[indx].set_title(titles[indx - 1])
+        _plot_raster_rasterio(raster_path=file, ax=axes[indx])
+
+    fig.tight_layout()
+    gc.collect()
+
+def _plot_raster_rasterio(raster_path=None, ax=None):
     """Auxilary plot of raster with matplotlib backend
         description
 
@@ -38,7 +54,7 @@ def plot_raster_rasterio(raster_path=None, ax=None):
     try:
         import rasterio
         from rasterio.plot import show as rasterio_show
-    except ModuleNotFoundError::
+    except ModuleNotFoundError:
         !pip install rasterio
         import rasterio
         from rasterio.plot import show as rasterio_show
@@ -46,10 +62,10 @@ def plot_raster_rasterio(raster_path=None, ax=None):
     src = rasterio.open(raster_path)
     rasterio_show(src, transform=src.transform, ax=ax)
 
-def _custom_save_rendered_plot(image_np_array=None, save_np_array=True, plot_filename='plot_temp_name.png'):
+def _custom_save_rendered_plot(image_np_array=None, save_np_array=True, plot_filename="plot_temp_name.png"):
     """Saves an array of the rendered 3D chart in custom way
 
-        * `pyvista` returns an error when one is trying to save a screenshot above of 4Kx4K window's size
+        * `pyvista` returns an error when one is trying to save a screenshot above of 4Kx4K window"s size
             so, let's approach a workaround using `PIL` package and an array representations of the plot
 
         Takes array representation of a chart
@@ -66,20 +82,22 @@ def _custom_save_rendered_plot(image_np_array=None, save_np_array=True, plot_fil
     """
     try:
         from PIL import Image
-    except ModuleNotFoundError::
+    except ModuleNotFoundError:
         !pip install PIL
         from PIL import Image
-        
-    print(f'\t\t{datetime.datetime.now()} Saving high quality plot array')
+
+    print(f"\t\t\t{datetime.datetime.now()} Saving high quality plot array")
     # https://numpy.org/doc/stable/reference/generated/numpy.save.html#numpy.save
-    np.save(plot_filename + '.array', image_np_array)
-    print(f'\t\t{datetime.datetime.now()} Saving high quality plot screenshot')
+    np.save(plot_filename + ".array", image_np_array)
+    print(f"\t\t\t{datetime.datetime.now()} Saving high quality plot screenshot")
     # https://stackoverflow.com/questions/902761/saving-a-numpy-array-as-an-image
     im = Image.fromarray(image_np_array)
-    im.save(plot_filename, optimize=True, quality=1.0, bbox_inches='tight')
+    im.save(plot_filename, optimize=True, quality=1.0, bbox_inches="tight")
     del(im, image_np_array)
 
-def plot_3D(mesh=None, plotter_params=None, plot_isometric=True, save_plot_mode='save render', plot_filename=None):
+def plot_3D(mesh=None, plotter_params=None, plot_actor_params=None, plot_isometric=True,
+            enable_shades=False, enable_eye_dome_lighting=False,
+            save_plot_mode='save render', plot_filename=None):
     """Plot 3D rendered charts according to selected params
         Saves or shows the rendered chart
 
@@ -95,11 +113,17 @@ def plot_3D(mesh=None, plotter_params=None, plot_isometric=True, save_plot_mode=
     ----------
     mesh : PyVista Data Object, for example pv.UnstructuredGrid or pv.StructuredGrid
         See PyVista Data Model https://docs.pyvista.org/user-guide/data_model.html
-    plotter_params : **kwarg
+    plotter_params : dict
         data structure with parameters to init plotter object. NOT IMPLEMENTED YET.
+    plot_actor_params : dict
+
     plot_isometric : bool
         set default isometric angle (view from around) if true
         set default orthographic view (from above) if false
+    enable_shades : bool
+
+    enable_eye_dome_lighting : bool
+
     save_plot_mode : str
         - `save render orbiting` for orbiting (.gif, from many screenshots, imageio-ffmpeg backend)
         - `save render orbiting video` for orbiting video (.mp4, from many screenshots). NOT IMPLEMENTED YET.
@@ -110,18 +134,20 @@ def plot_3D(mesh=None, plotter_params=None, plot_isometric=True, save_plot_mode=
         file name and extension of an output file (.png, .jpg, .gif)
     """
 
-    p = pv.Plotter(multi_samples=16, line_smoothing=True, lighting='light_kit', window_size=[3000, 3000])
-    p.enable_lightkit()
+    p = pv.Plotter(**plotter_params)
+    # p.enable_lightkit()
 
     print(f'\t{datetime.datetime.now()} Add mesh')
-    actor_1 = p.add_mesh(mesh, cmap='Blues', log_scale=False, show_scalar_bar=False)
+    actor_1 = p.add_mesh(mesh, **plot_actor_params)
     # actor2 = p.add_mesh(topo_clipped_water, clim=[-10, 2.5], cmap=['lightblue']) # "add water" the hard way
+    # p.add_mesh(mesh_rgb, scalars='RGB', rgb=True)
 
     if not plot_isometric:
         p.view_xy()
-        print(f'\tUse orthographic view angle for plotter')
+        p.camera.zoom(1.25)
+        print(f'\t\tUse orthographic view angle for plotter')
     else:
-        print(f'\tUse default (isometric) view angle for plotter')
+        print(f'\t\tUse default (isometric) view angle for plotter')
 
     print(f'\t{datetime.datetime.now()} Add custom light source')
     light = pv.Light(intensity=0.7)
@@ -130,28 +156,38 @@ def plot_3D(mesh=None, plotter_params=None, plot_isometric=True, save_plot_mode=
 
     ### check `light_kit`, `pv.Light` custom lights, or some other params to avoid VTK errors
     ### (vtkShaderProgram.cxx:452 / vtkOpenGLState errors)
-    # print(f'\t{datetime.datetime.now()} Enable shadows')
-    # p.enable_shadows() # disable
+    if enable_shades:
+        print(f'\t\t{datetime.datetime.now()} Enable shadows')
+        p.enable_shadows() # or disable
 
-    print(f'\t{datetime.datetime.now()} Enable anti_aliasing')
+    print(f'\t\t{datetime.datetime.now()} Enable anti_aliasing')
     p.enable_anti_aliasing(aa_type='msaa')
     # p.enable_depth_peeling() # ?
-    # p.enable_depth_of_field
-    # p.enable_eye_dome_lighting
+    # p.enable_depth_of_field()
 
-    print(f'\t{datetime.datetime.now()} Add grid')
+    #p.camera.tight()
+    #p.camera.zoom(1.2)
+    #p.camera_position = 'xy'
+    #p.camera.elevation = -45
+
+    if enable_eye_dome_lighting:
+        print(f'\t\t{datetime.datetime.now()} Enable shadows')
+        p.enable_eye_dome_lighting() # or disable
+
+    print(f'\t\t{datetime.datetime.now()} Add grid')
     ### check coordinates and projection https://github.com/pyvista/pyvista-support/issues/394
-    p.show_grid(color='lightgrey')
-    print(f'\t{datetime.datetime.now()} Add bounding_box')
+    p.show_grid(color='lightgrey', font_size=36)
+    print(f'\t\t{datetime.datetime.now()} Add bounding_box')
     p.add_bounding_box(opacity=0.75, color='lightgrey')
+
 
     if save_plot_mode == 'save render orbiting':
         !pip install imageio-ffmpeg
         print(f'\t{datetime.datetime.now()} Save orbiting')
         p.camera.zoom(1.5)
-        path = p.generate_orbital_path(n_points=36, shift=mesh.length)
-        p.open_gif(plot_filename) # "orbit_ortho1.gif"
-        p.orbit_on_path(path, write_frames=True)
+        path = p.generate_orbital_path(n_points=72, shift=mesh.length)
+        p.open_gif(plot_filename) # , fps=24
+        p.orbit_on_path(path, write_frames=True, progress_bar=True)
     elif save_plot_mode == 'save render':
         print(f'\t{datetime.datetime.now()} Save plot screenshot in high quality')
         image_np_array = p.screenshot(filename=None, return_img=True)
@@ -170,37 +206,67 @@ def _main_visualisation():
     """Runs through cities list
         renders charts, saves rendered charts
     """
-    experiment_number = 1
-    for indx, file in enumerate(glob.glob('/kaggle/input/miami-beach-lidar-raster/*.tif')):
-        print(f"{datetime.datetime.now()} Reading for Visualisation. Processing {file}.")
-        mesh = get_data._read_processed_rasterized_file(file_path=file,
-                                          CUSTOM_READ=True)
-        display(mesh)
-        topo_clipped = mesh.clip_scalar(scalars="data", value=0.1, invert=False, progress_bar=True)
-        display(topo_clipped)
-        if 'mosaic' in file:
-            topo_clipped.rotate_z(90) # if Miami
-            key = 'MIAMI FL USA'
-            wrap_factor = 0.02
-        else:
-            topo_clipped.rotate_z(-90) # if Dallas
-            key = 'DALLAS TX USA'
-            wrap_factor = 0.03
-        gc.collect()
-        print(f'\t{key}')
+    mesh = _read_processed_rasterized_file(file_path="/kaggle/working/riga_center.tif", CUSTOM_READ=True)
+    display(mesh)
 
-        print(f"\t{datetime.datetime.now()} Visualisation. Orbiting.")
-        plot_filename = f"Shades_{key}_tst{experiment_number}_biliniar_orbiting_3K.gif" # png
-        plot_3D(mesh=topo_clipped.warp_by_scalar(factor=wrap_factor), plotter_params=None, plot_isometric=True,
-                save_plot_mode='save render orbiting', plot_filename=plot_filename)
-        gc.collect()
-        print(f"\t{datetime.datetime.now()} Visualisation. Isometric.")
-        plot_filename = f"Shades_{key}_tst{experiment_number}_biliniar_isometric_3K.png"
-        plot_3D(mesh=topo_clipped.warp_by_scalar(factor=wrap_factor), plotter_params=None, plot_isometric=True,
-                save_plot_mode='save render', plot_filename=plot_filename)
-        gc.collect()
-        print(f"\t{datetime.datetime.now()} Visualisation. Orthographic.")
-        plot_filename = f"Shades_{key}_tst{experiment_number}_biliniar_ortho_3K.png"
-        plot_3D(mesh=topo_clipped.warp_by_scalar(factor=wrap_factor), plotter_params=None, plot_isometric=False,
-                save_plot_mode='save render', plot_filename=plot_filename)
-        gc.collect()
+    KEY = "CityName CityState CityCountry" # Prefix name example
+
+    #mesh.rotate_z(-180, inplace=True)
+    plot_actor_params = {"cmap" : "blues", "log_scale" : False, "show_scalar_bar" : False} # cmap='Blues' # "color" : "tan"
+    plotter_params = {'window_size' : [3200, 3200], 'lighting' : 'light_kit', 'line_smoothing' : True, 'multi_samples' : 16}
+    print(f"\t{datetime.datetime.now()} Visualisation. Orbiting.")
+    plot_filename = f"{KEY}_orbiting_{plotter_params['window_size'][0]}_72points.gif"
+    plot_3D(mesh=mesh, plotter_params=plotter_params, plot_actor_params=plot_actor_params, plot_isometric=True,
+            enable_eye_dome_lighting=False, enable_shades=False,
+            save_plot_mode='save render orbiting', plot_filename=plot_filename) # save_plot_mode = 'save render'
+    gc.collect()
+
+    plotter_params = {'window_size' : [6000, 6000]}
+    plot_filename = f"{KEY}_isometric_{plotter_params['window_size'][0]}.png"
+    plot_3D(mesh=mesh, plotter_params=plotter_params, plot_actor_params=plot_actor_params, plot_isometric=True,
+            enable_eye_dome_lighting=False, enable_shades=False,
+            save_plot_mode='save render', plot_filename=plot_filename) # save_plot_mode = 'save render'
+    gc.collect()
+
+    plot_filename = f"{KEY}_ortho_{plotter_params['window_size'][0]}.png"
+    plot_3D(mesh=mesh, plotter_params=plotter_params, plot_actor_params=plot_actor_params, plot_isometric=False,
+            enable_eye_dome_lighting=False, enable_shades=False,
+            save_plot_mode='save render', plot_filename=plot_filename) # save_plot_mode = 'save render'
+    gc.collect()
+
+    plot_filename = f"{KEY}_ortho_{plotter_params['window_size'][0]}_shades.png"
+    plot_3D(mesh=mesh, plotter_params=plotter_params, plot_actor_params=plot_actor_params, plot_isometric=False,
+            enable_eye_dome_lighting=False, enable_shades=True,
+            save_plot_mode='save render', plot_filename=plot_filename) # save_plot_mode = 'save render'
+    gc.collect()
+
+    plot_actor_params = {"color" : "tan", "log_scale" : False, "show_scalar_bar" : False}
+    plot_filename = f"{KEY}_isometric_{plotter_params['window_size'][0]}_tan.png"
+    plot_3D(mesh=mesh, plotter_params=plotter_params, plot_actor_params=plot_actor_params, plot_isometric=True,
+            enable_eye_dome_lighting=False, enable_shades=False,
+            save_plot_mode='save render', plot_filename=plot_filename) # save_plot_mode = 'save render'
+    gc.collect()
+
+    plot_filename = f"{KEY}_isometric_{plotter_params['window_size'][0]}_tan_eyedom.png"
+    plot_3D(mesh=mesh, plotter_params=plotter_params, plot_actor_params=plot_actor_params, plot_isometric=True,
+            enable_eye_dome_lighting=True, enable_shades=True,
+            save_plot_mode='save render', plot_filename=plot_filename) # save_plot_mode = 'save render'
+    gc.collect()
+
+    plot_filename = f"{KEY}_ortho_{plotter_params['window_size'][0]}_tan.png"
+    plot_3D(mesh=mesh, plotter_params=plotter_params, plot_actor_params=plot_actor_params, plot_isometric=False,
+            enable_eye_dome_lighting=False, enable_shades=False,
+            save_plot_mode='save render', plot_filename=plot_filename) # save_plot_mode = 'save render'
+    gc.collect()
+
+    plot_filename = f"{KEY}_ortho_{plotter_params['window_size'][0]}_tan_shades.png"
+    plot_3D(mesh=mesh, plotter_params=plotter_params, plot_actor_params=plot_actor_params, plot_isometric=False,
+            enable_eye_dome_lighting=False, enable_shades=True,
+            save_plot_mode='save render', plot_filename=plot_filename) # save_plot_mode = 'save render'
+    gc.collect()
+
+    plot_filename = f"{KEY}_ortho_{plotter_params['window_size'][0]}_tan_eyedom.png"
+    plot_3D(mesh=mesh, plotter_params=plotter_params, plot_actor_params=plot_actor_params, plot_isometric=False,
+            enable_eye_dome_lighting=True, enable_shades=True,
+            save_plot_mode='save render', plot_filename=plot_filename) # save_plot_mode = 'save render'
+    gc.collect()

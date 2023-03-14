@@ -1,0 +1,14 @@
+{
+"MIAMI FL USA" :
+    {"SURVEY_NAME" : "Interactive Hurricane Impact Assessment, LiDAR Project, 2007/2008",
+      "DOWNLOAD_FILE_FORMAT" : "ZIP",
+      "DATASET_FILE_FORMAT" : "TIF",
+      "RAW_CRS" : "EPSG:2236",
+      "DATA_LINKS_SMALL" : [],
+      "DATA_LINKS" : ["http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118754_e.zip",
+                      "http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118755_e.zip",
+                      "http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118454_e.zip",
+                      "http://mapping.ihrc.fiu.edu/FLDEM/miami_dade/lidar/CH_Block5_d5/las/zip/LID2007_118455_e.zip",
+                    ]
+    }
+}
